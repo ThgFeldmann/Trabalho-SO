@@ -9,6 +9,14 @@ TODO: Funcionalidades: SJF (preemptivo e não-preemptivo), Prioridade (preemptiv
 # geração aleatória de números
 import random
 
+class Processo:
+    def __init__(self, t_execucao, t_chegada, t_espera=0, t_restante=0, prioridade=0):
+        self.t_execucao = t_execucao
+        self.t_chegada = t_chegada
+        self.t_espera = t_espera
+        self.t_restante = t_restante
+        self.prioridade = prioridade
+
 # Tempo máximo que o progama pode ficar em execução
 MAXIMO_TEMPO_EXECUCAO = 65535
 
@@ -23,13 +31,18 @@ def main():
     prioridade = [0] * n_processos # Prioridade do processo (Não implementado)
     tempo_espera = [0] * n_processos # Tempo de espera
     tempo_restante = [0] * n_processos # Tempo restante de execução
+    
+    # Lista de processos
+    processos = []
 
     # Executando a função que cria os processos, 
     # o usuário escolhe se gera processos aleatórios ou se cria manualmente cada um
-    popular_processos(tempo_execucao, tempo_espera, tempo_restante, tempo_chegada, prioridade)
+    popular_processos(processos)
+    # popular_processos(tempo_execucao, tempo_espera, tempo_restante, tempo_chegada, prioridade)
 
     # Executa a função que retorna os processos diretamente no terminal
-    imprime_processos(tempo_execucao, tempo_espera, tempo_restante, tempo_chegada, prioridade)
+    imprime_processos(processos)
+    # imprime_processos(tempo_execucao, tempo_espera, tempo_restante, tempo_chegada, prioridade)
 
     # Escolher algoritmo
     while True:
@@ -72,32 +85,37 @@ def main():
 
 # Função de criação de processos
 # Escolha do usuário: gerar aleatórios ou manualmente
-def popular_processos(tempo_execucao, tempo_espera, tempo_restante, tempo_chegada, prioridade):
-    aleatorio = int(input("Sera aleatorio?:  "))
+def popular_processos(processos):
+    aleatorio = input("Sera aleatorio? S/N:  ").upper()
 
-    for i in range(n_processos):
-        # Popular Processos Aleatorio
-        if aleatorio == 1:
-            tempo_execucao[i] = random.randint(1, 10)
-            tempo_chegada[i] = random.randint(1, 10)
-            prioridade[i] = random.randint(1, 15)
-        # Popular Processos Manual
-        else:
-            tempo_execucao[i] = int(input("Digite o tempo de execucao do processo[" + str(i) + "]:  "))
-            tempo_chegada[i] = int(input("Digite o tempo de chegada do processo[" + str(i) + "]:  "))
-            prioridade[i] = int(input("Digite a prioridade do processo[" + str(i) + "]:  "))
+    for i in range(n_processos): # Repetindo até o número total de processos ser criado
+        if aleatorio == "S" or aleatorio == "SIM" or aleatorio == "1": # Popular Processos Aleatorio
+            processo = Processo( # Criando um processo aleatório | ordem: execução, chegada, prioridade
+                t_execucao=random.randint(1, 10),
+                t_chegada=random.randint(1, 10),
+                prioridade=random.randint(1, 15),
+            )
+        else: # Popular Processos Manual
+            tempo_execucao = int(input("Digite o tempo de execucao do processo[" + str(i) + "]:  "))
+            tempo_chegada = int(input("Digite o tempo de chegada do processo[" + str(i) + "]:  "))
+            prioridade = int(input("Digite a prioridade do processo[" + str(i) + "]:  "))
+            processo = Processo(t_execucao=tempo_execucao, t_chegada=tempo_chegada, prioridade=prioridade)
 
-        tempo_restante[i] = tempo_execucao[i]
-        tempo_espera[i] = 0
+        processo.t_restante = processo.t_execucao
+        processo.t_espera = 0
+        
+        processos.append(processo)
 
 # Retorna os processos existentes no terminal
-def imprime_processos(tempo_execucao, tempo_espera, tempo_restante, tempo_chegada, prioridade):
+def imprime_processos(processos):
+    incremento = 0
     # Imprime lista de processos
-    for i in range(n_processos):
-        print("Processo[" + str(i) + "]: tempo_execucao=" + str(tempo_execucao[i]) +
-                " tempo_restante=" + str(tempo_restante[i]) +
-                " tempo_chegada=" + str(tempo_chegada[i]) +
-                " prioridade =" + str(prioridade[i]))
+    for processo in processos:
+        print("Processo[" + str(incremento) + "]: tempo_execucao=" + str(processo.t_execucao) +
+                " tempo_restante= " + str(processo.t_restante) +
+                " tempo_chegada= " + str(processo.t_chegada) +
+                " prioridade= " + str(processo.prioridade))
+        incremento+=1
 
 # Função que retorna no terminal os atributos do processo ao longo da execução
 def imprime_stats(espera):
