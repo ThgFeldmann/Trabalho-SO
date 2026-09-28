@@ -2,7 +2,7 @@
 Sistemas Operacionais - IFRS Campus Restinga - ADS 3N - 2026/2
 Trabalho de Desenvolvimento: simulador de algoritmos de escalonamento de processos.
 
-TODO: Funcionalidades: SJF (preemptivo e não-preemptivo), Prioridade (preemptivo e não-preemptivo) e ROUND ROBIN
+TODO: Funcionalidades: SJF (preemptivo), Prioridade (preemptivo e não-preemptivo) e ROUND ROBIN
 """
 
 # Importando a biblioteca do Python 'random' para a 
@@ -171,27 +171,47 @@ def FCFS(processos):
 def SJF(preemptivo: bool, processos):
     # processo inicial no FIFO e o zero
     processo_em_execucao = 0 # Define qual processo vai ser executado | é utilizado como o id do processo
-
-    # implementar codigo do SJF preemptivo e nao preemptivo
-    for ut in range(1, MAXIMO_TEMPO_EXECUCAO):
-        if not preemptivo: # SJF não-preemptivo
-            processos_ordenados = sorted(processos, key=lambda processo: (processo.t_restante)) # Ordenando os processos por tempo restante de execução
-            # Executando o processo | Mesma lógica do FCFS
-            if processos_ordenados[processo_em_execucao].t_execucao == processos_ordenados[processo_em_execucao].t_restante:
-                processos_ordenados[processo_em_execucao].t_espera = ut - 1
     
-            if processos_ordenados[processo_em_execucao].t_restante == 1:
-                if processo_em_execucao == (n_processos - 1):
-                    break
-                else:
-                    processo_em_execucao += 1
-            else:
-                processos_ordenados[processo_em_execucao].t_restante = processos_ordenados[processo_em_execucao].t_restante - 1
+    if not preemptivo: # SJF não-preemptivo
+        for ut in range(1, MAXIMO_TEMPO_EXECUCAO):
+            if processos[processo_em_execucao].t_chegada > ut: # Se o processo ainda não chegou
+                novo_processo = None
+                
+                for processo_em_leitura in range(n_processos): # Laço de repetição para procurar um novo processo que chegou
+                    if processos[processo_em_leitura].t_chegada <= ut and processos[processo_em_leitura].t_restante > 0: # Se um processo 'chegou'
+                        novo_processo = processo_em_leitura
+                        break
+            
+            if novo_processo is not None:
+                processo_em_execucao = novo_processo # Trocando o processo em execução
+            
+            # Executando o processo
+            if processos[processo_em_execucao].t_execucao == processos[processo_em_execucao].t_restante: # No começo da execução
+                processos[processo_em_execucao].t_espera = ut - 1 # calculo do tempo de espera
+            
+            processos[processo_em_execucao].t_restante -= 1 # Reduzindo o tempo restante
 
-        # else: # SJF preemptivo
+            if processos[processo_em_execucao].t_restante == 0: # Se o processo terminou de executar
+                menor_tempo = MAXIMO_TEMPO_EXECUCAO # menor tempo de execução dentre os processos
+                novo_processo = None
 
+                for processo_em_leitura in range(n_processos): # Procurando qual processo executar dentre os 'chegados'
+                    # Se o processo já chegou
+                    if processos[processo_em_leitura].t_chegada <= ut and processos[processo_em_leitura].t_restante > 0:
+                        if processos[processo_em_leitura].t_execucao < menor_tempo: # Se o processo em leitura tiver o menor tempo de execução
+                            menor_tempo = processos[processo_em_leitura].t_execucao
+                            novo_processo = processo_em_leitura # Um novo processo chegou
+                    
+                if novo_processo != None: # Se um novo processo chegou
+                    processo_em_execucao = novo_processo
+                else: # Se não tiver um processo para executar no momento
+                    processo_em_execucao = 0
+
+    # else: # SJF preemptivo
+    #     processos_chegados = [] # Lista dos processos que já chegaram para executar
+    #     for ut in range(1, MAXIMO_TEMPO_EXECUCAO):
+    
     imprime_stats(processos)
-
 
 def PRIORIDADE(preemptivo, execucao, espera, restante, chegada, prioridade):
     tempo_execucao = list(execucao)
