@@ -95,7 +95,7 @@ def main():
 # Função de criação de processos
 # Escolha do usuário: gerar aleatórios ou manualmente
 def popular_processos(processos):
-    aleatorio = input("Sera aleatorio? S/N:  ").upper()
+    aleatorio = input("Será aleatorio? S/N:  ").upper()
 
     for i in range(n_processos): # Repetindo até o número total de processos ser criado
         if aleatorio == "S" or aleatorio == "SIM" or aleatorio == "1": # Popular Processos Aleatorio
@@ -155,63 +155,73 @@ def FCFS(processos):
 
     imprime_stats(processos)
 
-# def SJF(preemptivo, execucao, espera, restante, chegada):
-#     tempo_execucao = list(execucao)
-#     tempo_espera = list(espera)
-#     tempo_restante = list(restante)
-#     tempo_chegada = list(chegada)
-
-#     # implementar codigo do SJF preemptivo e nao preemptivo
-#     # ...
-#     #
-
-#     imprime_stats(tempo_espera)
-
 # Função do critério SJF (Shortest-Job-First)
-def SJF(preemptivo: bool, processos): #TODO
+def SJF(preemptivo: bool, processos):
     # processo inicial no FIFO e o zero
     processo_em_execucao = 0 # Define qual processo vai ser executado | é utilizado como o id do processo
     
     novo_processo = None # Criando a variavel, sem uso neste momento
     
     if not preemptivo: # SJF não-preemptivo
+        lista_chegada = []
+        lista_ordenada = []
+        processo_em_execucao = 0
+        todos_terminaram = False
+        tempo_execucao_maximo = 0
+        processo_atual = None
+        
+        for processo in processos:
+            tempo_execucao_maximo += processo.t_execucao
+        
         for ut in range(1, MAXIMO_TEMPO_EXECUCAO):
-            if processos[processo_em_execucao].t_chegada > ut: # Se o processo ainda não chegou
-                novo_processo = None
+            for processo in processos: # Simulando a chegada dos processos ao longo do tempo
+                if processo.t_chegada == ut and processo not in lista_chegada:
+                    lista_chegada.append(processo)
+            
+            # Lista ordenada pelo menor tempo restante
+            lista_ordenada = sorted(lista_chegada, key=lambda processo: processo.t_restante)
+            
+            if len(lista_ordenada) > 0 and processo_em_execucao < len(lista_ordenada): # Se tiver processos para executar
+                if processo_atual == None and len(lista_ordenada) > 0: 
+                    processo_atual = lista_ordenada[processo_em_execucao]
+                    inicio = ut
+
+                if processo_atual.t_restante > 0:
+                    print("tempo[" + str(ut) + "]: processo[" + str(processo_atual.id) + "] restante=" +
+                            str(processo_atual.t_restante))
                 
-                for processo_em_leitura in range(n_processos): # Laço de repetição para procurar um novo processo que chegou
-                    if processos[processo_em_leitura].t_chegada <= ut and processos[processo_em_leitura].t_restante > 0: # Se um processo 'chegou'
-                        novo_processo = processo_em_leitura
-                        break
-            
-            if novo_processo is not None:
-                processo_em_execucao = novo_processo # Trocando o processo em execução
-            
-            # Executando o processo
-            if processos[processo_em_execucao].t_execucao == processos[processo_em_execucao].t_restante: # No começo da execução
-                processos[processo_em_execucao].t_espera = ut - 1 # calculo do tempo de espera
-            
-            processos[processo_em_execucao].t_restante -= 1 # Reduzindo o tempo restante
+                if processo_atual.t_restante == 1: # Última execução do processo
+                    processo_atual.t_restante = 0
 
-            if processos[processo_em_execucao].t_restante == 0: # Se o processo terminou de executar
-                menor_tempo = MAXIMO_TEMPO_EXECUCAO # menor tempo de execução dentre os processos
-                novo_processo = None
-
-                for processo_em_leitura in range(n_processos): # Procurando qual processo executar dentre os 'chegados'
-                    # Se o processo já chegou
-                    if processos[processo_em_leitura].t_chegada <= ut and processos[processo_em_leitura].t_restante > 0:
-                        if processos[processo_em_leitura].t_execucao < menor_tempo: # Se o processo em leitura tiver o menor tempo de execução
-                            menor_tempo = processos[processo_em_leitura].t_execucao
-                            novo_processo = processo_em_leitura # Um novo processo chegou
+                    processo_atual.t_espera = inicio - processo_atual.t_chegada # Calculo do tempo de espera
+                    if processo_atual.t_espera < 0: # Caso o tempo de espera seja negativo depois do calculo
+                        processo_atual.t_espera = 0
                     
-                if novo_processo != None: # Se um novo processo chegou
-                    processo_em_execucao = novo_processo
-                else: # Se não tiver um processo para executar no momento
-                    processo_em_execucao = 0
+                    if todos_terminaram == True:
+                        break
+                    else:
+                        terminados = 0
+                        for processo in processos:
+                            if processo.t_restante == 0:
+                                terminados +=1
+                        
+                        if terminados == len(processos):
+                            todos_terminaram = True
+                        
+                        processo_em_execucao += 1
+                        
+                        if processo_em_execucao < len(lista_ordenada):
+                            processo_atual = lista_ordenada[processo_em_execucao]
+                            inicio = ut+1
+                        else:
+                            break
+                else: # Executando o processo
+                    processo_atual.t_restante = processo_atual.t_restante - 1
+            else:
+                print(f"Tempo[{ut}]: CPU ociosa")
 
     else: # SJF preemptivo
         lista_chegada = []
-        processo_em_leitura = 0
         processo_em_execucao = 0
         todos_terminaram = False
         tempo_execucao_maximo = 0
@@ -244,9 +254,6 @@ def SJF(preemptivo: bool, processos): #TODO
                         
                         if lista_ordenada[processo_em_execucao].t_espera < 0:
                             lista_ordenada[processo_em_execucao].t_espera = 0
-                        
-                        print(f"{ut} - {lista_ordenada[processo_em_execucao].t_chegada} - {lista_ordenada[processo_em_execucao].t_execucao}")
-                        print(lista_ordenada[processo_em_execucao].t_espera)
                         
                         if todos_terminaram == True:
                             break
