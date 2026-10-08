@@ -9,6 +9,9 @@ TODO: Funcionalidades: SJF (preemptivo), Prioridade (preemptivo e não-preemptiv
 # geração aleatória de números
 import random
 
+# Cópia profunda da lista de processos, sem alterar os valores dos objetos
+import copy
+
 class Processo:
     def __init__(self, id, t_execucao, t_chegada, t_espera=0, t_restante=0, prioridade=0):
         self.id = id
@@ -134,29 +137,33 @@ def imprime_stats(processos):
 
 # Função do critério FCFS (First-Come-First-Served)
 def FCFS(processos):
+    lista_processos = copy.deepcopy(processos)
+    
     # processo inicial no FIFO e o zero
     processo_em_execucao = 0 # Define qual processo vai ser executado | é utilizado como o id do processo
 
     for ut in range(1, MAXIMO_TEMPO_EXECUCAO):
-        print("tempo[" + str(ut) + "]: processo[" + str(processos[processo_em_execucao].id) + "] restante=" +
-                str(processos[processo_em_execucao].t_restante))
+        print("tempo[" + str(ut) + "]: processo[" + str(lista_processos[processo_em_execucao].id) + "] restante=" +
+                str(lista_processos[processo_em_execucao].t_restante))
 
-        if processos[processo_em_execucao].t_execucao == processos[processo_em_execucao].t_restante:
-            processos[processo_em_execucao].t_espera = ut - 1
+        if lista_processos[processo_em_execucao].t_execucao == lista_processos[processo_em_execucao].t_restante:
+            lista_processos[processo_em_execucao].t_espera = ut - 1
 
-        if processos[processo_em_execucao].t_restante == 1:
+        if lista_processos[processo_em_execucao].t_restante == 1:
             if processo_em_execucao == (n_processos - 1):
                 break
             else:
                 processo_em_execucao += 1
         else:
-            processos[processo_em_execucao].t_restante = processos[processo_em_execucao].t_restante - 1
+            lista_processos[processo_em_execucao].t_restante = lista_processos[processo_em_execucao].t_restante - 1
     #
 
-    imprime_stats(processos)
+    imprime_stats(lista_processos)
 
 # Função do critério SJF (Shortest-Job-First)
 def SJF(preemptivo: bool, processos):
+    lista_processos = copy.deepcopy(processos)
+    
     # processo inicial no FIFO e o zero
     processo_em_execucao = 0 # Define qual processo vai ser executado | é utilizado como o id do processo
     
@@ -170,11 +177,11 @@ def SJF(preemptivo: bool, processos):
         tempo_execucao_maximo = 0
         processo_atual = None
         
-        for processo in processos:
+        for processo in lista_processos:
             tempo_execucao_maximo += processo.t_execucao
         
         for ut in range(1, MAXIMO_TEMPO_EXECUCAO):
-            for processo in processos: # Simulando a chegada dos processos ao longo do tempo
+            for processo in lista_processos: # Simulando a chegada dos processos ao longo do tempo
                 if processo.t_chegada == ut and processo not in lista_chegada:
                     lista_chegada.append(processo)
             
@@ -201,11 +208,11 @@ def SJF(preemptivo: bool, processos):
                         break
                     else:
                         terminados = 0
-                        for processo in processos:
+                        for processo in lista_processos:
                             if processo.t_restante == 0:
                                 terminados +=1
                         
-                        if terminados == len(processos):
+                        if terminados == len(lista_processos):
                             todos_terminaram = True
                         
                         processo_em_execucao += 1
@@ -226,11 +233,11 @@ def SJF(preemptivo: bool, processos):
         todos_terminaram = False
         tempo_execucao_maximo = 0
         
-        for processo in processos:
+        for processo in lista_processos:
             tempo_execucao_maximo += processo.t_execucao
         
         for ut in range(1, MAXIMO_TEMPO_EXECUCAO):
-            for processo in processos:
+            for processo in lista_processos:
                 if processo.t_chegada == ut and processo not in lista_chegada:
                     lista_chegada.append(processo)
             
@@ -259,11 +266,11 @@ def SJF(preemptivo: bool, processos):
                             break
                         else:
                             terminados = 0
-                            for processo in processos:
+                            for processo in lista_processos:
                                 if processo.t_restante == 0:
                                     terminados +=1
                             
-                            if terminados == len(processos):
+                            if terminados == len(lista_processos):
                                 todos_terminaram = True
                             
                             processo_em_execucao += 1
@@ -272,7 +279,7 @@ def SJF(preemptivo: bool, processos):
             else:
                 print(f"Tempo[{ut}]: CPU ociosa")
 
-    imprime_stats(processos)
+    imprime_stats(lista_processos)
 
 def PRIORIDADE(preemptivo, execucao, espera, restante, chegada, prioridade):
     tempo_execucao = list(execucao)
