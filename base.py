@@ -32,13 +32,6 @@ n_processos = 4
 
 # Função principal, bloco principal de código
 def main():
-    # Variáveis dos processos
-    tempo_execucao = [0] * n_processos # Tempo de execução
-    tempo_chegada = [0] * n_processos # Tempo de chegada
-    prioridade = [0] * n_processos # Prioridade do processo (Não implementado)
-    tempo_espera = [0] * n_processos # Tempo de espera
-    tempo_restante = [0] * n_processos # Tempo restante de execução
-    
     # Lista de processos
     processos = []
 
@@ -75,20 +68,20 @@ def main():
             SJF(False, processos)
 
         elif alg == 4:  # PRIORIDADE PREEMPTIVO
-            PRIORIDADE(True, tempo_execucao, tempo_espera, tempo_restante, tempo_chegada, prioridade)
+            PRIORIDADE(True, processos)
 
         elif alg == 5:  # PRIORIDADE NAO PREEMPTIVO
-            PRIORIDADE(False, tempo_execucao, tempo_espera, tempo_restante, tempo_chegada, prioridade)
+            PRIORIDADE(False, processos)
 
         elif alg == 6:  # Round_Robin
-            Round_Robin(tempo_execucao, tempo_espera, tempo_restante)
+            Round_Robin(processos)
 
         elif alg == 7:  # IMPRIME CONTEUDO INICIAL DOS PROCESSOS
-            imprime_processos(tempo_execucao, tempo_espera, tempo_restante, tempo_chegada, prioridade)
+            imprime_processos(processos)
 
         elif alg == 8:  # REATRIBUI VALORES INICIAIS
-            popular_processos(tempo_execucao, tempo_espera, tempo_restante, tempo_chegada, prioridade)
-            imprime_processos(tempo_execucao, tempo_espera, tempo_restante, tempo_chegada, prioridade)
+            popular_processos(processos)
+            imprime_processos(processos)
 
         elif alg == 9:  # Sair do programa (Parar a execução)
             break
