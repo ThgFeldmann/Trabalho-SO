@@ -182,119 +182,97 @@ def FCFS(processos):
 def SJF(preemptivo: bool, processos):
     lista_processos = copy.deepcopy(processos)
     
-    # processo inicial no FIFO e o zero
-    processo_em_execucao = 0 # Define qual processo vai ser executado | é utilizado como o id do processo
-    
-    novo_processo = None # Criando a variavel, sem uso neste momento
-    
     if not preemptivo: # SJF não-preemptivo
         lista_chegada = []
         lista_ordenada = []
-        processo_em_execucao = 0
-        todos_terminaram = False
-        tempo_execucao_maximo = 0
         processo_atual = None
-        
-        for processo in lista_processos:
-            tempo_execucao_maximo += processo.t_execucao
         
         for ut in range(1, MAXIMO_TEMPO_EXECUCAO):
             for processo in lista_processos: # Simulando a chegada dos processos ao longo do tempo
                 if processo.t_chegada == ut and processo not in lista_chegada:
                     lista_chegada.append(processo)
-            
-            # Lista ordenada pelo menor tempo restante
-            lista_ordenada = sorted(lista_chegada, key=lambda processo: processo.t_restante)
-            
-            if len(lista_ordenada) > 0 and processo_em_execucao < len(lista_ordenada): # Se tiver processos para executar
-                if processo_atual == None and len(lista_ordenada) > 0: 
-                    processo_atual = lista_ordenada[processo_em_execucao]
-                    inicio = ut
 
-                if processo_atual.t_restante > 0:
-                    print("tempo[" + str(ut) + "]: processo[" + str(processo_atual.id) + "] restante=" +
-                            str(processo_atual.t_restante))
+            # Lista ordenada pelo tempo restante
+            lista_ordenada = sorted(
+                [processo for processo in lista_chegada if processo.t_restante > 0], # Ordenando apenas processos pendentes
+                key=lambda processo: processo.t_restante
+            )
+            
+            if processo_atual is None and len(lista_ordenada) > 0: # Se não tiver um processo executando
+                processo_atual = lista_ordenada[0] # Seleciona o próximo processo da fila
+                inicio = ut # Marca o tempo de inicio do processo
+            
+            if processo_atual is not None: # Se tiver um processo para executar
+                print("tempo[" + str(ut) + "]: processo[" + str(processo_atual.id) + "] restante=" +
+                    str(processo_atual.t_restante))
                 
-                if processo_atual.t_restante == 1: # Última execução do processo
+                processo_atual.t_restante -= 1 # Executa o processo
+                
+                if processo_atual.t_restante <= 0: # Se o processo terminou neste ciclo
                     processo_atual.t_restante = 0
-
                     processo_atual.t_espera = inicio - processo_atual.t_chegada # Calculo do tempo de espera
+                    
                     if processo_atual.t_espera < 0: # Caso o tempo de espera seja negativo depois do calculo
                         processo_atual.t_espera = 0
                     
-                    if todos_terminaram == True:
+                    processo_atual = None # Remove o processo do estado de 'Executando'
+                    
+                    # Verificando se todos os processos já terminaram
+                    todos_terminaram = all(processo.t_restante == 0 for processo in lista_processos)
+                    
+                    if todos_terminaram: # Se todos terminaram, cancela a execução da função
                         break
-                    else:
-                        terminados = 0
-                        for processo in lista_processos:
-                            if processo.t_restante == 0:
-                                terminados +=1
-                        
-                        if terminados == len(lista_processos):
-                            todos_terminaram = True
-                        
-                        processo_em_execucao += 1
-                        
-                        if processo_em_execucao < len(lista_ordenada):
-                            processo_atual = lista_ordenada[processo_em_execucao]
-                            inicio = ut+1
-                        else:
-                            break
-                else: # Executando o processo
-                    processo_atual.t_restante = processo_atual.t_restante - 1
-            else:
+            else: # Se não há um processo para executar no ciclo atual
                 print(f"Tempo[{ut}]: CPU ociosa")
 
     else: # SJF preemptivo
         lista_chegada = []
-        processo_em_execucao = 0
-        todos_terminaram = False
-        tempo_execucao_maximo = 0
-        
-        for processo in lista_processos:
-            tempo_execucao_maximo += processo.t_execucao
+        lista_ordenada = []
+        processo_atual = None
         
         for ut in range(1, MAXIMO_TEMPO_EXECUCAO):
-            for processo in lista_processos:
+            for processo in lista_processos: # Simulando a chegada dos processos ao longo do tempo
                 if processo.t_chegada == ut and processo not in lista_chegada:
                     lista_chegada.append(processo)
+        
+            # Lista ordenada pelo menor tempo restante
+            lista_ordenada = sorted(
+                [processo for processo in lista_chegada if processo.t_restante > 0], # Ordenando apenas processos pendentes
+                key=lambda processo: processo.t_restante
+            )
             
-            if len(lista_chegada) > 0: # Se tiver processos para executar
-                # Lista ordenada pelo menor tempo restante
-                lista_ordenada = sorted(lista_chegada, key=lambda processo: processo.t_restante)
+            if len(lista_ordenada) > 0: # Se tiver processos ordenados para execução
+                proximo_processo = lista_ordenada[0] # Selecionando o próximo processo na lista
                 
-                if processo_em_execucao < len(lista_ordenada):
-                    if lista_ordenada[processo_em_execucao].t_restante > 0:
-                        print("tempo[" + str(ut) + "]: processo[" + str(lista_ordenada[processo_em_execucao].id) + "] restante=" +
-                                str(lista_ordenada[processo_em_execucao].t_restante))
+                if processo_atual is None: # Se não há um processo executando
+                    processo_atual = proximo_processo # O processo em execução será o próximo processo na lista
+                    inicio = ut # Salvando o tempo de inicio do processo
+                elif proximo_processo.t_restante < processo_atual.t_restante: # Se o próximo processo na lista for 'menor' que o atual em execução
+                    processo_atual = proximo_processo # O processo em execução será o próximo processo na lista
+                    inicio = ut # Salvando o tempo de inicio do processo
+                
+                if processo_atual is not None: # Se tiver um processo selecionado para execução
+                    print("tempo[" + str(ut) + "]: processo[" + str(processo_atual.id) + "] restante=" +
+                        str(processo_atual.t_restante))
                     
-                    if lista_ordenada[processo_em_execucao].t_restante == 1:
-                        lista_ordenada[processo_em_execucao].t_restante = 0
-
-                        if ut-1 != tempo_execucao_maximo:
-                            lista_ordenada[processo_em_execucao].t_espera = ut+1 - lista_ordenada[processo_em_execucao].t_chegada - lista_ordenada[processo_em_execucao].t_execucao
-                        else:
-                            lista_ordenada[processo_em_execucao].t_espera = ut+1 - lista_ordenada[processo_em_execucao].t_chegada - lista_ordenada[processo_em_execucao].t_execucao
+                    processo_atual.t_restante -= 1 # Executa o processo
+                    
+                    if processo_atual.t_restante <= 0: # Se o processo terminou neste ciclo
+                        processo_atual.t_restante = 0
+                        processo_atual.t_espera = ut - (processo_atual.t_chegada+1) - processo_atual.t_execucao # Calculo do tempo de espera
                         
+                        if processo_atual.t_espera < 0: # Caso o tempo de espera seja negativo depois do calculo
+                            processo_atual.t_espera = 0
                         
-                        if lista_ordenada[processo_em_execucao].t_espera < 0:
-                            lista_ordenada[processo_em_execucao].t_espera = 0
+                        processo_atual = None # Remove o processo do estado de 'Executando'
                         
-                        if todos_terminaram == True:
+                        # Verificando se todos os processos já terminaram
+                        todos_terminaram = all(processo.t_restante == 0 for processo in lista_processos)
+                        
+                        if todos_terminaram: # Se todos terminaram, cancela a execução da função
                             break
-                        else:
-                            terminados = 0
-                            for processo in lista_processos:
-                                if processo.t_restante == 0:
-                                    terminados +=1
-                            
-                            if terminados == len(lista_processos):
-                                todos_terminaram = True
-                            
-                            processo_em_execucao += 1
-                    else:
-                        lista_ordenada[processo_em_execucao].t_restante = lista_ordenada[processo_em_execucao].t_restante - 1
-            else:
+            else: # Se não há um processo para executar no ciclo atual
+                processo_atual = None
                 print(f"Tempo[{ut}]: CPU ociosa")
 
     imprime_stats(lista_processos)
