@@ -88,6 +88,31 @@ def main():
 
 # def executar_processos(processos):
 
+# Função para verificar se todos os processos da lista foram concluídos
+# Recebe uma lista de processos e retorna um booleano
+def TodosProcessosForamConcluidos(lista_processos):
+    concluidos = 0
+
+    for processo in lista_processos:
+        if processo.t_restante == 0:
+            concluidos += 1
+    
+    if concluidos == len(lista_processos):
+        return True
+    else:
+        return False
+
+# Função que recebe uma lista de processos, retira processos já concluídos e retorna uma lista apenas com processos não concluídos
+# Recebe: lista de processos e retorna uma lista de processos pendentes
+def RemoverProcessosConcluidos(processos):
+    lista_processos_pendentes = []
+    
+    for processo in processos:
+        if processo.t_restante > 0:
+            lista_processos_pendentes.append(processo)
+    
+    return lista_processos_pendentes
+
 # Função de criação de processos
 # Escolha do usuário: gerar aleatórios ou manualmente
 def popular_processos(processos):
@@ -274,18 +299,106 @@ def SJF(preemptivo: bool, processos):
 
     imprime_stats(lista_processos)
 
-def PRIORIDADE(preemptivo, execucao, espera, restante, chegada, prioridade):
-    tempo_execucao = list(execucao)
-    tempo_espera = list(espera)
-    tempo_restante = list(restante)
-    tempo_chegada = list(chegada)
-    prioridade_temp = list(prioridade)
+# Função do critério de Prioridade
+def PRIORIDADE(preemptivo, processos):
+    lista_processos = copy.deepcopy(processos)
+    
+    if not preemptivo: # Prioridade não-preemptivo
+        lista_chegada = []
+        lista_ordenada = []
+        processo_atual = None
+        
+        for ut in range(1, MAXIMO_TEMPO_EXECUCAO):
+            for processo in lista_processos: # Simulando a chegada dos processos ao longo do tempo
+                if processo.t_chegada == ut and processo not in lista_chegada:
+                    lista_chegada.append(processo)
 
-    # implementar codigo do Prioridade preemptivo e nao preemptivo
-    # ...
-    #
+            # Lista ordenada pela prioridade
+            lista_ordenada = sorted(
+                [processo for processo in lista_chegada if processo.t_restante > 0], # Ordenando apenas processos pendentes
+                key=lambda processo: processo.prioridade
+            )
+            
+            if processo_atual is None and len(lista_ordenada) > 0: # Se não tiver um processo executando
+                processo_atual = lista_ordenada[0] # Seleciona o próximo processo da fila
+                inicio = ut # Marca o tempo de inicio do processo
+            
+            if processo_atual is not None: # Se tiver um processo para executar
+                print("tempo[" + str(ut) + "]: processo[" + str(processo_atual.id) + "] restante=" +
+                    str(processo_atual.t_restante))
+                
+                processo_atual.t_restante -= 1 # Executa o processo
+                
+                if processo_atual.t_restante <= 0: # Se o processo terminou neste ciclo
+                    processo_atual.t_restante = 0
+                    processo_atual.t_espera = inicio - processo_atual.t_chegada # Calculo do tempo de espera
+                    
+                    if processo_atual.t_espera < 0: # Caso o tempo de espera seja negativo depois do calculo
+                        processo_atual.t_espera = 0
+                    
+                    processo_atual = None # Remove o processo do estado de 'Executando'
+                    
+                    # Verificando se todos os processos já terminaram
+                    todos_terminaram = all(processo.t_restante == 0 for processo in lista_processos)
+                    
+                    if todos_terminaram: # Se todos terminaram, cancela a execução da função
+                        break
+            else: # Se não há um processo para executar no ciclo atual
+                print(f"Tempo[{ut}]: CPU ociosa")
 
-    imprime_stats(tempo_espera)
+    else: # Prioridade preemptivo
+        lista_chegada = []
+        processo_em_execucao = 0
+        todos_terminaram = False
+        tempo_execucao_maximo = 0
+        
+        for processo in lista_processos:
+            tempo_execucao_maximo += processo.t_execucao
+        
+        for ut in range(1, MAXIMO_TEMPO_EXECUCAO):
+            for processo in lista_processos:
+                if processo.t_chegada == ut and processo not in lista_chegada:
+                    lista_chegada.append(processo)
+            
+            if len(lista_chegada) > 0: # Se tiver processos para executar
+                # Lista ordenada pelo menor tempo restante
+                lista_ordenada = sorted(lista_chegada, key=lambda processo: processo.prioridade)
+                
+                if processo_em_execucao < len(lista_ordenada):
+                    if lista_ordenada[processo_em_execucao].t_restante > 0:
+                        print("tempo[" + str(ut) + "]: processo[" + str(lista_ordenada[processo_em_execucao].id) + "] restante=" +
+                                str(lista_ordenada[processo_em_execucao].t_restante))
+                    
+                    if lista_ordenada[processo_em_execucao].t_restante == 1:
+                        lista_ordenada[processo_em_execucao].t_restante = 0
+
+                        if ut-1 != tempo_execucao_maximo:
+                            lista_ordenada[processo_em_execucao].t_espera = ut+1 - lista_ordenada[processo_em_execucao].t_chegada - lista_ordenada[processo_em_execucao].t_execucao
+                        else:
+                            lista_ordenada[processo_em_execucao].t_espera = ut+1 - lista_ordenada[processo_em_execucao].t_chegada - lista_ordenada[processo_em_execucao].t_execucao
+                        
+                        
+                        if lista_ordenada[processo_em_execucao].t_espera < 0:
+                            lista_ordenada[processo_em_execucao].t_espera = 0
+                        
+                        if todos_terminaram == True:
+                            break
+                        else:
+                            terminados = 0
+                            for processo in lista_processos:
+                                if processo.t_restante == 0:
+                                    terminados +=1
+                            
+                            if terminados == len(lista_processos):
+                                todos_terminaram = True
+                            
+                            processo_em_execucao += 1
+                    else:
+                        lista_ordenada[processo_em_execucao].t_restante = lista_ordenada[processo_em_execucao].t_restante - 1
+            else:
+                print(f"Tempo[{ut}]: CPU ociosa")
+
+    imprime_stats(lista_processos)
 
 
 def Round_Robin(execucao, espera, restante):
