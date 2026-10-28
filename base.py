@@ -2,7 +2,7 @@
 Sistemas Operacionais - IFRS Campus Restinga - ADS 3N - 2026/2
 Trabalho de Desenvolvimento: simulador de algoritmos de escalonamento de processos.
 
-TODO: Funcionalidades: Prioridade (preemptivo e não-preemptivo) e ROUND ROBIN
+TODO: Funcionalidades: ROUND ROBIN
 """
 
 # Importando a biblioteca do Python 'random' para a 
@@ -28,7 +28,10 @@ class Processo:
 MAXIMO_TEMPO_EXECUCAO = 65535
 
 # Quantidade de processos que vão ser criados e utilizados
-n_processos = 4
+n_processos = 3
+
+# Quantum usado no Round-Robin, padrão é '2', alterar o valor irá afetar o resultado da função
+quantum = 2
 
 # Função principal, bloco principal de código
 def main():
@@ -74,7 +77,7 @@ def main():
             PRIORIDADE(False, processos)
 
         elif alg == 6:  # Round_Robin
-            Round_Robin(processos)
+            Round_Robin(processos, quantum)
 
         elif alg == 7:  # IMPRIME CONTEUDO INICIAL DOS PROCESSOS
             imprime_processos(processos)
@@ -369,16 +372,58 @@ def PRIORIDADE(preemptivo, processos):
     imprime_stats(lista_processos)
 
 
-def Round_Robin(execucao, espera, restante):
-    tempo_execucao = list(execucao)
-    tempo_espera = list(espera)
-    tempo_restante = list(restante)
+def Round_Robin(processos, quantum):
+    lista_processos = copy.deepcopy(processos) # Copiando a lista de processos sem prejudicá-la
+    fila_processos = [] # Fila de processos que 'rotaciona' ao longo do Round-Robin | Não é usado a 'lista_chegada' pois a execução não é linear
+    processo_atual = None # Processo que está em execução, começa em 'None'
+    quantum_restante = 0 # O quatum será verificado durante a execução do processo
 
-    # implementar codigo do Round-Robin
-    # ...
-    #
+    for ut in range(1, MAXIMO_TEMPO_EXECUCAO):
+        #* Simulando a chegada dos processos ao longo do tempo
+        for processo in lista_processos:
+            if processo.t_chegada == ut and processo not in fila_processos:
+                fila_processos.append(processo)
+        
+        #* Contando o tempo de espera dos processos, exceto do atual processo em execução
+        if len(fila_processos) > 0: # Se tiver processos na fila para executar
+            for processo in fila_processos: # Atualizando o tempo de espera dos processos da fila que não estão em execução
+                if processo is not processo_atual:
+                    processo.t_espera += 1
+        
+        #* Se não tiver um processo para executar | Seleciona um novo e reinicia o quantum
+        if processo_atual is None and len(fila_processos) > 0: # Se não tiver um processo em execução E há processos para executar na fila
+            processo_atual = fila_processos.pop(0) # 'Remove' um processo da fila para executá-lo
+            quantum_restante = quantum # Marca o quantum para a execução do processo atual
+        
+        #* Se tiver um processo para executar, execute-o
+        if processo_atual is not None: # Se tiver um processo para executar neste ciclo
+            print("tempo[" + str(ut) + "]: processo[" + str(processo_atual.id) + "] restante=" +
+                str(processo_atual.t_restante))
+            
+            processo_atual.t_restante -= 1 # Executa o processo
+            quantum_restante -= 1 # Reduz o quantum
 
-    imprime_stats(tempo_espera)
+            if processo_atual.t_restante <= 0: # Se o processo terminou de executar
+                processo_atual.t_restante = 0
+                processo_atual = None # Removendo o processo da execução
+                quantum_restante = 0 # O quatum acabou
+                
+                # Verificando se todos os processos já terminaram
+                todos_terminaram = all(processo.t_restante == 0 for processo in lista_processos)
+                
+                if todos_terminaram: # Se todos terminaram, cancela a execução da função
+                    break
+        
+        #* Se o quatum terminou porém o processo atual não terminou
+        if quantum_restante == 0 and processo_atual is not None: # Se o quantum terminou
+            fila_processos.append(processo_atual) # O processo atual volta para a fila de processos com as informações atuais
+            processo_atual = None # Removendo o processo da execução
+        
+        else: # Se não há um processo para executar no ciclo atual
+            print(f"Tempo[{ut}]: CPU ociosa")
+
+
+    imprime_stats(lista_processos)
 
 
 main()
