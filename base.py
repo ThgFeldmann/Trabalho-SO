@@ -1,8 +1,6 @@
 """
 Sistemas Operacionais - IFRS Campus Restinga - ADS 3N - 2026/2
 Trabalho de Desenvolvimento: simulador de algoritmos de escalonamento de processos.
-
-TODO: Funcionalidades: ROUND ROBIN
 """
 
 # Importando a biblioteca do Python 'random' para a 
